@@ -21,6 +21,12 @@ def assemble_and_view():
                            size=[0, 0, 0.05])
 
     model = arm.compile()
+    n = 6  # arm joints; the gripper actuator (index 6) stays as-is
+    # Position actuator force = gain*ctrl + bias. Make it force = ctrl.
+    model.actuator_gainprm[:n, 0] = 1.0
+    model.actuator_biasprm[:n, :3] = 0.0
+    # ctrlrange now means torque limits
+    model.actuator_ctrlrange[:n] = model.actuator_forcerange[:n]
     data = mujoco.MjData(model)
 
     print(f"nq={model.nq}, nu={model.nu}")
