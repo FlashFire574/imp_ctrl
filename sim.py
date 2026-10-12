@@ -105,8 +105,12 @@ def main():
             step_start = time.time()
             t = data.time
 
-            # Example target: small circle in the XY plane
-            target = x_start + np.array([0.1 * np.sin(t), 0.1 * (np.cos(t) - 1), 0.0])
+            CIRCLE = False
+            if CIRCLE:
+                # Example target: small circle in the XY plane
+                target = x_start + np.array([0.1 * np.sin(t), 0.1 * (np.cos(t) - 1), 0.0])
+            else:
+                target = x_start
 
             data.ctrl[:6] = ctrl.compute(data, target)
             log["t"].append(data.time)
