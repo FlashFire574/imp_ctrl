@@ -24,7 +24,7 @@ class ImpedanceController:
     """A Cartesian Operational Space Impedance Controller for a MuJoCo robotic arm."""
 
     def __init__(self, model, data, site_name="attachment_site",
-                 kp=KP_DEFAULT, kd=KD_DEFAULT):
+                 kp=KP_DEFAULT, kd=KD_DEFAULT, joint_names=None):
         """
         Initialize the impedance controller buffers, configurations, and target orientation.
 
@@ -40,7 +40,9 @@ class ImpedanceController:
         self.site_id = model.site(site_name).id
         
         # Map arm joint IDs to their respective degrees of freedom (DoF) indices
-        self.dof = np.array([model.jnt_dofadr[model.joint(j).id] for j in ARM_JOINTS])
+        if joint_names is None:
+            joint_names = ARM_JOINTS
+        self.dof = np.array([model.jnt_dofadr[model.joint(j).id] for j in joint_names])
         
         # Pre-allocate mathematical and kinematic buffers
         self.jacp = np.zeros((3, model.nv))

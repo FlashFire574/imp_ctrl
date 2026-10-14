@@ -1,13 +1,3 @@
-"""
-Main Interactive Teleoperation Simulation Entry Point.
-
-This script integrates the `robot_model` assembly, `ImpedanceController` law, 
-and `KeyboardTeleop` state filters into a live simulation loop. It compiles the 
-bimanual/single-arm asset scene, spawns dynamic physical manipulation items (cube, 
-cylinder) near the home position, handles user real-time keystroke callback events, 
-and drives the Mujoco passive viewer infrastructure at a deterministic rate.
-"""
-
 import time
 import mujoco
 import mujoco.viewer
@@ -18,13 +8,6 @@ from keyboard_teleop import KeyboardTeleop
 
 
 def main():
-    """
-    Instantiate the MuJoCo scene environment and execute the synchronous control loop.
-    
-    Manages the live teleoperation loop by querying keyboard inputs, updating 
-    reference tracking targets, evaluating the operational space impedance task 
-    wrench, and maintaining passive visual viewer synchronization at real-time speeds.
-    """
     model = build_model(with_objects=True)
     data = mujoco.MjData(model)
     set_home(model, data)
@@ -45,18 +28,13 @@ def main():
         while viewer.is_running():
             step_start = time.time()
 
-            # Process user command updates and smooth spatial trajectories
             x_ref, grip = teleop.update()
-            
-            # Map Cartesian virtual forces to joints and forward gripper control states
             data.ctrl[:6] = ctrl.compute(data, x_ref)
             data.ctrl[6] = grip
 
-            # Step the simulation physics engine and update render buffers
             mujoco.mj_step(model, data)
             viewer.sync()
 
-            # Enforce strict real-time execution constraint pacing
             sleep = dt - (time.time() - step_start)
             if sleep > 0:
                 time.sleep(sleep)

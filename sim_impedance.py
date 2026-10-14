@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """
-main_simulation.py
-
 This script coordinates a 3D simulation pipeline in MuJoCo, deploying an
 impedance controller to track static or circular trajectory targets.
 
@@ -25,7 +23,7 @@ from robot_model import build_model, set_home
 from impedance_controller import ImpedanceController
 from plotting import report
 
-CIRCLE = False
+CIRCLE = True
 
 
 def main():
