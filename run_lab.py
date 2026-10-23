@@ -89,7 +89,7 @@ def main():
             return x_start
         # Smooth out-and-back sweep along a straight line: starts at rest at
         # x_start, reaches x_start + length*direction, returns, and repeats.
-        CIRCLE = True
+        CIRCLE = False
         if CIRCLE:
             return x_start + np.array([0.1 * np.sin(t), 0.1 * (np.cos(t) - 1), 0.0])
         else:
