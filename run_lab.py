@@ -15,9 +15,8 @@ by the impedance controller through data.qfrc_applied.
 """
 
 import argparse
-from html import parser
+from email import parser
 import time
-from xml.parsers.expat import model
 
 import numpy as np
 import mujoco
@@ -25,6 +24,7 @@ import mujoco.viewer
 
 from geodude_assets import get_geodude_path
 from impedance_controller import ImpedanceController
+from quest_teleop import QuestTeleop
 from plotting import report
 
 ARM_JOINTS = [
@@ -56,6 +56,14 @@ def main():
                         help="Line length in metres (default 0.1).")
     parser.add_argument("--period", type=float, default=6.0,
                         help="Seconds for one out-and-back sweep (default 6).")
+    parser.add_argument("--teleop", action="store_true",
+                    help="Drive the arms from the Meta Quest controllers.")
+    parser.add_argument("--scale", type=float, default=1.0,
+                    help="Hand-motion to end-effector-motion scale.")
+    parser.add_argument("--yaw", type=float, default=0.0,
+                    help="Rotate the Quest frame about z (deg) to match the robot's forward.")
+    parser.add_argument("--max-lead", type=float, default=0.10,
+                    help="Max distance (m) the target may lead the end effector.")
     args = parser.parse_args()
 
     sides = ["left", "right"] if args.arm == "both" else [args.arm]
@@ -81,6 +89,10 @@ def main():
             "log": {"t": [], "pos": [], "target": [], "ori_err": []},
         }
 
+    if args.teleop:
+        teleop = QuestTeleop(sides, scale=args.scale, yaw_deg=args.yaw)
+    else:
+        teleop = None
     direction = np.zeros(3)
     direction["xyz".index(args.axis)] = 1.0
 
@@ -100,11 +112,24 @@ def main():
         dumped = False
         while viewer.is_running():
             step_start = time.time()
-            for arm in arms.values():
+
+            for side, arm in arms.items():
                 ctrl = arm["ctrl"]
-                target = get_target(arm["x_start"], data.time)
+                x_now = data.site_xpos[ctrl.site_id].copy()
+
+                if teleop is not None:
+                    target = teleop.get_target(side, x_now)
+                    # Safety: don't let the target run far ahead of the EE
+                    lead = target - x_now
+                    n = np.linalg.norm(lead)
+                    if n > args.max_lead:
+                        target = x_now + lead * (args.max_lead / n)
+                else:
+                    target = get_target(arm["x_start"], data.time)
+
                 data.qfrc_applied[ctrl.dof] = ctrl.compute(data, target)
 
+                # logging (unchanged)
                 log = arm["log"]
                 log["t"].append(data.time)
                 log["pos"].append(data.site_xpos[ctrl.site_id].copy())
@@ -117,18 +142,6 @@ def main():
             sleep = model.opt.timestep - (time.time() - step_start)
             if sleep > 0:
                 time.sleep(sleep)
-
-    # Post-run: quick numbers, then your existing report() per arm
-    for side, arm in arms.items():
-        pos = np.array(arm["log"]["pos"])
-        tgt = np.array(arm["log"]["target"])
-        if len(pos):
-            err = np.linalg.norm(pos - tgt, axis=1)
-            print(f"[{side}] RMS position error: {np.sqrt(np.mean(err**2))*1000:.2f} mm, "
-                  f"max: {err.max()*1000:.2f} mm")
-    for side, arm in arms.items():
-        print(f"--- report: {side} arm ---")
-        report(arm["log"], arm["x_start"])
 
 
 if __name__ == "__main__":
