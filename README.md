@@ -1,5 +1,5 @@
 # imp_ctrl
-
+(Work in progress the documentation or code may still break)
 MuJoCo-based impedance control experiments for a UR5e robot with a Robotiq 2F-85 gripper.
 
 This repository contains the control logic, robot model assembly, teleoperation helpers, and MuJoCo simulation entry points for Cartesian impedance experiments. The project is organized as a Python package under `imp_ctrl/` and includes a lab runner for dual-arm work in the Geodude scene.
