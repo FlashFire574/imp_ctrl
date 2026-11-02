@@ -128,6 +128,10 @@ def main():
                     target = get_target(arm["x_start"], data.time)
 
                 data.qfrc_applied[ctrl.dof] = ctrl.compute(data, target)
+                if teleop is not None:
+                    aid = model.actuator(f"{side}_ur5e/gripper/fingers_actuator").id
+                    lo, hi = model.actuator_ctrlrange[aid]
+                    data.ctrl[aid] = lo + teleop.trigger(side) * (hi - lo)
 
                 # logging (unchanged)
                 log = arm["log"]
@@ -142,7 +146,6 @@ def main():
             sleep = model.opt.timestep - (time.time() - step_start)
             if sleep > 0:
                 time.sleep(sleep)
-
 
 if __name__ == "__main__":
     main()
