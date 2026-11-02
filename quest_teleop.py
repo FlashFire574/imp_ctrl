@@ -38,8 +38,15 @@ class QuestTeleop:
 
     def get_target(self, side, x_current):
         """Returns the Cartesian target for this arm; holds when grip is released."""
-        k = "r" if side == "right" else "l"
-        grip_key = f"{side}Grip"
+        if side == "right" :
+            hand = "left"
+        else:
+            hand = "right"   # mirrored mapping
+        if hand == "left":
+            k = "l"
+        else:
+            k = "r"
+        grip_key = f"{hand}Grip"
         st = self.state[side]
         with self._lock:
             T = self.poses.get(k)
@@ -59,5 +66,9 @@ class QuestTeleop:
         return st["target"]
 
     def trigger(self, side):
+        if side == "right":
+            hand = "left"
+        else:
+            hand = "right"
         with self._lock:
-            return self.buttons.get(f"{side}Trig", (0.0,))[0]
+            return self.buttons.get(f"{hand}Trig", (0.0,))[0]
