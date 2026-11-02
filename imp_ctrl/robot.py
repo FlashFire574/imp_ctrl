@@ -1,16 +1,19 @@
 """
 Robot Model Compilation and Scene Initialization for MuJoCo Simulation.
 
-This module provides utility functions to dynamically compile a Universal Robots 
-UR5e arm combined with a Robotiq 2f85 gripper using MuJoCo's MjSpec API. It includes 
-helpers to convert the default arm position actuators into pure torque motors, spawn 
-manipulation objects (cubes, cylinders) with custom friction and elliptic contact cones, 
+This module provides utility functions to dynamically compile a Universal Robots
+UR5e arm combined with a Robotiq 2f85 gripper using MuJoCo's MjSpec API. It includes
+helpers to convert the default arm position actuators into pure torque motors, spawn
+manipulation objects (cubes, cylinders) with custom friction and elliptic contact cones,
 and reset the system joints or free bodies to home/target poses.
 """
 
-import os
+from pathlib import Path
 import numpy as np
 import mujoco
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ASSETS = REPO_ROOT / "assets"
 
 # Target arm joint configurations and home posture coordinates
 ARM_JOINTS = ["shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
@@ -21,8 +24,8 @@ Q_HOME = np.array([-1.5708, -1.5708, 1.5708, -1.5708, -1.5708, 0.0])
 def add_object(spec, name, geom_type, size, rgba, mass=0.1):
     """
     Append a dynamically interactable free-body object to the world model spec.
-    
-    Configures high-friction surfaces and a 4-dimensional contact dimension 
+
+    Configures high-friction surfaces and a 4-dimensional contact dimension
     for stable grasping manipulations.
     """
     body = spec.worldbody.add_body(name=name, pos=[0, 0, 1.0])
@@ -34,16 +37,15 @@ def add_object(spec, name, geom_type, size, rgba, mass=0.1):
 def build_model(with_objects=False):
     """
     Assemble the complete UR5e and Robotiq gripper model from separate XML descriptors.
-    
-    Sets up global environmental properties like floor planes, lighting, elliptic 
+
+    Sets up global environmental properties like floor planes, lighting, elliptic
     friction cones, and modifies the arm for torque control before compilation.
     """
-    base = os.path.dirname(os.path.abspath(__file__))
-    ur5e_path = os.path.join(base, "assets", "universal_robots_ur5e", "ur5e.xml")
-    robotiq_path = os.path.join(base, "assets", "robotiq_2f85", "2f85.xml")
+    ur5e_path = ASSETS / "universal_robots_ur5e" / "ur5e.xml"
+    robotiq_path = ASSETS / "robotiq_2f85" / "2f85.xml"
 
-    arm = mujoco.MjSpec.from_file(ur5e_path)
-    gripper = mujoco.MjSpec.from_file(robotiq_path)
+    arm = mujoco.MjSpec.from_file(str(ur5e_path))
+    gripper = mujoco.MjSpec.from_file(str(robotiq_path))
     arm.attach(gripper, site=arm.site("attachment_site"), prefix="gripper_")
 
     arm.worldbody.add_light(pos=[0, -0.2, 1], dir=[0, 0.2, -0.8],
@@ -68,8 +70,8 @@ def build_model(with_objects=False):
 def make_arm_torque_controlled(model, n=6):
     """
     Convert the first 'n' position-driven actuators into pure joint torque motors.
-    
-    Disables internal biases, overrides gain profiles, and enforces physical 
+
+    Disables internal biases, overrides gain profiles, and enforces physical
     Newton-meter limits tailored for UR5e joint motors.
     """
     model.actuator_gainprm[:n, 0] = 1.0
@@ -83,7 +85,7 @@ def make_arm_torque_controlled(model, n=6):
 def set_home(model, data):
     """
     Reset the primary robotic arm joints to their designated Q_HOME position.
-    
+
     Executes a forward kinematic update to synchronize site transformations.
     """
     qadr = [model.jnt_qposadr[model.joint(j).id] for j in ARM_JOINTS]
@@ -94,7 +96,7 @@ def set_home(model, data):
 def place_object(model, data, body_name, pos):
     """
     Teleport a specified free body to a new 3D spatial position in the scene.
-    
+
     Resets the object's orientation profile back to a default identity quaternion.
     """
     bid = model.body(body_name).id

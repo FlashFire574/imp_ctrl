@@ -19,9 +19,10 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 
-from robot_model import build_model, set_home
-from impedance_controller import ImpedanceController
-from plotting import report
+import _path  # noqa: F401
+from imp_ctrl.robot import build_model, set_home
+from imp_ctrl.controller import ImpedanceController
+from imp_ctrl.plotting import report
 
 CIRCLE = True
 

@@ -3,11 +3,11 @@
 Run the impedance controller on the Geodude lab model (two UR5e arms).
 
 Usage:
-    python run_lab.py --arm left
-    python run_lab.py --arm right
-    python run_lab.py --arm both            (default)
-    python run_lab.py --arm both --axis x --length 0.15 --period 8
-    python run_lab.py --arm both --static   (hold position instead of a line)
+    python scripts/run_lab.py --arm left
+    python scripts/run_lab.py --arm right
+    python scripts/run_lab.py --arm both            (default)
+    python scripts/run_lab.py --arm both --axis x --length 0.15 --period 8
+    python scripts/run_lab.py --arm both --static   (hold position instead of a line)
 
 Arms that are NOT selected stay held at the "ready" pose by their own
 position servos. Selected arms have their servos switched off and are driven
@@ -15,7 +15,6 @@ by the impedance controller through data.qfrc_applied.
 """
 
 import argparse
-from email import parser
 import time
 
 import numpy as np
@@ -23,14 +22,12 @@ import mujoco
 import mujoco.viewer
 
 from geodude_assets import get_geodude_path
-from impedance_controller import ImpedanceController
-from quest_teleop import QuestTeleop
-from plotting import report
 
-ARM_JOINTS = [
-    "shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
-    "wrist_1_joint", "wrist_2_joint", "wrist_3_joint",
-]
+import _path  # noqa: F401
+from imp_ctrl.controller import ImpedanceController
+from imp_ctrl.robot import ARM_JOINTS
+from imp_ctrl.teleop.quest import QuestTeleop
+
 SITE = "gripper_attachment_site"
 
 
@@ -74,7 +71,7 @@ def main():
     # Home pose first; controllers read the home orientation at construction
     mujoco.mj_resetDataKeyframe(model, data, model.key("ready").id)
     mujoco.mj_forward(model, data)
-    model.body_gravcomp[:] = 0 
+    model.body_gravcomp[:] = 0
 
     arms = {}
     for side in sides:

@@ -1,13 +1,13 @@
 """
 Keyboard Teleoperation System for MuJoCo Robot Control.
 
-This module provides real-time end-effector pose and gripper control using standard 
-keyboard inputs via GLFW key codes. It updates a 3D Cartesian target position 
-with protective safety features, including a minimum height limit (`z_min`) and a 
-radial reach constraint (`max_reach`). 
+This module provides real-time end-effector pose and gripper control using standard
+keyboard inputs via GLFW key codes. It updates a 3D Cartesian target position
+with protective safety features, including a minimum height limit (`z_min`) and a
+radial reach constraint (`max_reach`).
 
-To ensure smooth robot movement, a first-order low-pass filter gently interpolates 
-the reference trajectory (`x_ref`) toward the discrete step targets. Gripper open/close 
+To ensure smooth robot movement, a first-order low-pass filter gently interpolates
+the reference trajectory (`x_ref`) toward the discrete step targets. Gripper open/close
 commands are rate-limited to simulate physical actuation time.
 """
 
@@ -61,10 +61,10 @@ class KeyboardTeleop:
         if keycode in KEY_MOVES:
             axis, sign = KEY_MOVES[keycode]
             self.target[axis] += sign * self.step
-            
+
             # Enforce floor safety boundary
             self.target[2] = max(self.target[2], self.z_min)
-            
+
             # Enforce workspace workspace radius envelope constraint
             r = np.linalg.norm(self.target[:2])
             if r > self.max_reach:
@@ -87,7 +87,7 @@ class KeyboardTeleop:
         """
         # Exponentially smooth spatial coordinates toward discrete key-step targets
         self.x_ref += (self.dt / self.ref_tau) * (self.target - self.x_ref)
-        
+
         # Apply rate limits to the gripper opening and closing velocities
         delta = self.grip_cmd - self.grip_val
         self.grip_val += np.clip(delta, -self.gripper_rate * self.dt,

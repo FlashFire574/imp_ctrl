@@ -1,19 +1,19 @@
 """
 Cartesian Operational Space Impedance Controller for MuJoCo.
 
-This module implements an impedance control architecture that models the robot's 
-end-effector as a virtual multi-axis spring-damper system. It computes the 
-necessary joint torques to track a target Cartesian position while maintaining a 
-fixed target orientation. 
+This module implements an impedance control architecture that models the robot's
+end-effector as a virtual multi-axis spring-damper system. It computes the
+necessary joint torques to track a target Cartesian position while maintaining a
+fixed target orientation.
 
-The controller applies a PD control law in task space (wrench) and projects it 
-to joint space via a Jacobian Transpose mapping, automatically 
+The controller applies a PD control law in task space (wrench) and projects it
+to joint space via a Jacobian Transpose mapping, automatically
 injecting dynamic gravity and Coriolis compensation terms (`qfrc_bias`).
 """
 
 import numpy as np
 import mujoco
-from robot_model import ARM_JOINTS
+from imp_ctrl.robot import ARM_JOINTS
 
 # Default stiffness (KP) and damping (KD) matrices for operational space control
 KP_DEFAULT = np.diag([500, 500, 500, 50, 50, 50])   # N/m, Nm/rad
@@ -38,12 +38,12 @@ class ImpedanceController:
         self.model = model
         self.kp, self.kd = kp, kd
         self.site_id = model.site(site_name).id
-        
+
         # Map arm joint IDs to their respective degrees of freedom (DoF) indices
         if joint_names is None:
             joint_names = ARM_JOINTS
         self.dof = np.array([model.jnt_dofadr[model.joint(j).id] for j in joint_names])
-        
+
         # Pre-allocate mathematical and kinematic buffers
         self.jacp = np.zeros((3, model.nv))
         self.jacr = np.zeros((3, model.nv))
@@ -86,6 +86,6 @@ class ImpedanceController:
 
         # Evaluate the Cartesian virtual spring-damper control law
         wrench = self.kp @ err - self.kd @ xdot
-        
+
         # Map the task wrench to joint torques and add gravity/Coriolis compensation
         return J.T @ wrench + data.qfrc_bias[self.dof]

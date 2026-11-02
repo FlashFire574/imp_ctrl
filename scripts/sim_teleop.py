@@ -2,9 +2,10 @@ import time
 import mujoco
 import mujoco.viewer
 
-from robot_model import build_model, set_home, place_object
-from impedance_controller import ImpedanceController
-from keyboard_teleop import KeyboardTeleop
+import _path  # noqa: F401
+from imp_ctrl.robot import build_model, set_home, place_object
+from imp_ctrl.controller import ImpedanceController
+from imp_ctrl.teleop.keyboard import KeyboardTeleop
 
 
 def main():
